@@ -1,23 +1,35 @@
 from django.shortcuts import render
+from rest_framework import viewsets, mixins
 from django.views import View
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.db.models import Q
 from .models import Category, Book, Review, Question, Answer
-from .serializers import CategorySerializer, BookSerializer, ReviewSerializer, QuestionSerializer, AnswerSerializer
+from .serializers import BookDetailSerializer, BookSerializer, ReviewSerializer, QuestionSerializer, AnswerSerializer
 
 # Create your views here.
 
-class CategoryView(APIView):
-    def get(self, request):
-        categories = Category.objects.all()
-        serializer = CategorySerializer(categories, many=True)
-        return Response(serializer.data)
+class BookViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
 
-class BookDetailView(APIView):
-    def get(self, request, book_id):
-        book = Book.objects.get(id=book_id)
-        serializer = BookSerializer(book)
-        return Response(serializer.data)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category = self.request.query_params.get('category')
+        search = self.request.query_params.get('search')
+
+        if category:
+            queryset = queryset.filter(category__name=category)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(category__name__icontains=search)
+            )
+        return queryset
+
+class BookDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Book.objects.all()
+    serializer_class = BookDetailSerializer
 
 class BookReviewView(APIView):
     def post(self, request, book_id):
