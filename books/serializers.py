@@ -12,6 +12,9 @@ class BookSerializer(serializers.ModelSerializer):
         fields = ['id', 'bookcover', 'introduction']
 
 class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.nickname')
+    book = serializers.ReadOnlyField(source='book.title')
+
     class Meta:
         model = Review
         fields = '__all__'
@@ -23,6 +26,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class QuestionSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.nickname') 
     class Meta:
         model = Question
         fields = '__all__'
