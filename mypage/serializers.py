@@ -1,12 +1,24 @@
 from rest_framework import serializers
-from .models import UserProfile, Review
+from django.contrib.auth.models import User
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = '__all__'
+class SignupSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(max_length=50)
 
-class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Review
-        fields = '__all__'
+        model = User
+        fields = ['username', 'password', 'nickname', 'email']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        nickname = validated_data.pop('nickname')
+        user = User.objects.create_user(**validated_data)
+        user.userprofile.nickname = nickname
+        user.userprofile.save()
+        return user
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()

@@ -38,6 +38,6 @@ class Question(models.Model):
 
 class Answer(models.Model):
     id = models.AutoField(primary_key=True)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     content = models.TextField()
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True)

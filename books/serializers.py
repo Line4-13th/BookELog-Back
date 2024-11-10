@@ -25,13 +25,18 @@ class BookDetailSerializer(serializers.ModelSerializer):
         model = Book
         fields = '__all__'
 
-class QuestionSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField(source='user.nickname') 
-    class Meta:
-        model = Question
-        fields = '__all__'
-
 class AnswerSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.nickname')  # 답변 작성자의 닉네임 표시
+    
     class Meta:
         model = Answer
         fields = '__all__'
+
+class QuestionSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.nickname') 
+    answers = AnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ['id', 'content', 'user', 'answers']
+

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import viewsets, mixins, generics
+from rest_framework import viewsets, mixins, generics, status
 from rest_framework.decorators import action
 from django.views import View
 from rest_framework.views import APIView
@@ -68,7 +68,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
         book_id = self.kwargs.get('book_id')
         return Question.objects.filter(book__id=book_id)
 
-    @action(detail=True, methods=['post'], url_path='question')
+    @action(detail=False, methods=['post'], url_path='question')
     def add_question(self, request, book_id=None):
         """특정 책에 질문을 추가하는 POST 요청 처리"""
         book = get_object_or_404(Book, id=book_id)
@@ -78,18 +78,39 @@ class QuestionViewSet(viewsets.ModelViewSet):
         user_profile = get_object_or_404(UserProfile, user__username=username)
         
         question = Question.objects.create(book=book, user=user_profile, content=content)
-        serializer = self.get_serializer(question)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        q_serializer = self.get_serializer(question)
+        return Response(q_serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'], url_path='qna_list')
     def list_questions(self, request, book_id=None):
         #모든 question들 반환
         questions = self.get_queryset()
-        serializer = self.get_serializer(questions, many=True)
-        return Response(serializer.data)
+        q_serializer = QuestionSerializer(questions, many=True)
+        return Response(q_serializer.data)
     
+    @action(detail=True, methods=['post'], url_path=r'(?P<question_id>\d+)/answer')
+    def add_answer(self, request, pk=None, book_id=None, question_id=None):
+        """특정 질문에 답변을 추가하는 POST 요청 처리"""
+        question = get_object_or_404(Question, id=question_id, book_id=book_id)
+        content = request.data.get('content')
+        username = request.data.get('username')
 
-class BookAnswerView(APIView):
-    def post(self, request, book_id):
-        # 답변 작성 로직 구현
-        pass
+        user_profile = get_object_or_404(UserProfile, user__username=username)
+        answer = Answer.objects.create(question=question, user=user_profile, content=content)
+        
+        a_serializer = AnswerSerializer(answer)
+        return Response(a_serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'], url_path='answers')
+    def list_answers(self, request, book_id=None, pk=None):
+        """특정 질문에 대한 모든 답변을 반환하는 GET 요청 처리"""
+        question = get_object_or_404(Question, id=pk, book_id=book_id)
+        question_data = QuestionSerializer(question).data
+
+        answers = Answer.objects.filter(question=question)
+        answers_data = AnswerSerializer(answers, many=True).data
+        
+        return Response({
+        "question": question_data,
+        "answers": answers_data
+        })
