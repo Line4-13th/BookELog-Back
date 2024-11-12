@@ -1,7 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, mixins, generics, status
 from rest_framework.decorators import action
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
@@ -66,7 +65,6 @@ class QuestionViewSet(viewsets.ModelViewSet):
         book_id = self.kwargs.get('book_id')
         return Question.objects.filter(book__id=book_id)
 
-    @action(detail=False, methods=['post'], url_path='question')
     def add_question(self, request, book_id=None):
         """특정 책에 질문을 추가하는 POST 요청 처리"""
         book = get_object_or_404(Book, id=book_id)
@@ -79,15 +77,13 @@ class QuestionViewSet(viewsets.ModelViewSet):
         q_serializer = self.get_serializer(question)
         return Response(q_serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], url_path='qna_list')
     def list_questions(self, request, book_id=None):
         #모든 question들 반환
         questions = self.get_queryset()
         q_serializer = QuestionSerializer(questions, many=True)
         return Response(q_serializer.data)
     
-    @action(detail=True, methods=['post'], url_path=r'(?P<question_id>\d+)/answer')
-    def add_answer(self, request, pk=None, book_id=None, question_id=None):
+    def add_answer(self, request, book_id=None, question_id=None):
         """특정 질문에 답변을 추가하는 POST 요청 처리"""
         question = get_object_or_404(Question, id=question_id, book_id=book_id)
         content = request.data.get('content')
@@ -99,16 +95,11 @@ class QuestionViewSet(viewsets.ModelViewSet):
         a_serializer = AnswerSerializer(answer)
         return Response(a_serializer.data, status=status.HTTP_201_CREATED)
     
-    @action(detail=True, methods=['get'], url_path='answers')
-    def list_answers(self, request, book_id=None, pk=None):
+    def list_answers(self, request, book_id=None, question_id=None):
         """특정 질문에 대한 모든 답변을 반환하는 GET 요청 처리"""
-        question = get_object_or_404(Question, id=pk, book_id=book_id)
+        question = get_object_or_404(Question, id=question_id, book_id=book_id)
         question_data = QuestionSerializer(question).data
 
-        answers = Answer.objects.filter(question=question)
-        answers_data = AnswerSerializer(answers, many=True).data
-        
         return Response({
-            "question": question_data,
-            "answers": answers_data
+            "question": question_data
         })

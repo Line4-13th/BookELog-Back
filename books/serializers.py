@@ -10,7 +10,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['id', 'bookcover', 'introduction']
+        fields = ['id', 'cover_image', 'introduction']
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
@@ -27,14 +27,14 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AnswerSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source='user.username')  # 답변 작성자의 닉네임 표시
+    user = serializers.CharField(source='user.first_name')  # 답변 작성자의 닉네임 표시
     
     class Meta:
         model = Answer
         fields = '__all__'
 
 class QuestionSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField(source='user.username')
+    user = serializers.ReadOnlyField(source='user.first_name')
     answers = AnswerSerializer(many=True, read_only=True)
 
     class Meta:
